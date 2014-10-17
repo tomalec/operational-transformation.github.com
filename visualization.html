@@ -6,6 +6,10 @@
     <link rel="stylesheet" href="./css/layout.css" />
     <link rel="stylesheet" href="./static/codemirror/lib/codemirror.css" />
     <link reL="stylesheet" href="./css/visualization.css" />
+
+
+    <script src="bower_components/platform/platform.js"></script>
+
   </head>
   <body>
     <script src="./static/underscore/underscore.js"></script>
@@ -34,8 +38,10 @@ Visualization <a href="http://creativecommons.org/licenses/by/3.0/"><img src="ht
 <script src="./static/d3/d3.js"></script>
 <script src="./static/ot/lib/server.js"></script>
 <script src="./js/visualization.js"></script>
+<link rel="import" href="bower_components/juicy-diamond-graph/src/juicy-diamond-graph.html">
 <script>
-$(document).ready(function () {
+//window.addEventListener("WebComponentsReady",function () {
+window.addEventListener("polymer-ready",function () {
   // Initialize Visualization
   new Visualization("Lorem ipsum").insertBefore($('#wrapper footer'));
 });

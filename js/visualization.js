@@ -1,5 +1,5 @@
 (function() {
-  var Client, CodeMirrorAdapter, DiamondEdge, DiamondPoint, LEFT, MyClient, MyServer, NetworkChannel, RIGHT, Server, TextOperation, View, Visualization, WrappedOperation, createOperationElement, hideSpan, highlight, operationPopoverContent, operationToHtml, quote, stateTransitions, tr, unescape,
+  var Client, CodeMirrorAdapter, MyClient, MyServer, NetworkChannel, Server, TextOperation, View, Visualization, WrappedOperation, createOperationElement, hideSpan, highlight, operationPopoverContent, operationToHtml, quote, stateTransitions, tr, unescape,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -88,7 +88,7 @@
       this.alice.el.attr({
         id: 'alice'
       });
-      this.alice.svg.attr('id', 'alice-diamond-diagram');
+      this.alice.diagram.setAttribute('id', 'alice-diamond-diagram');
       this.aliceReceiveChannel = new NetworkChannel(false, clientReceive(this.alice)).appendTo(this.el);
       this.aliceReceiveChannel.el.attr({
         id: 'alice-receive-channel'
@@ -101,7 +101,7 @@
       this.bob.el.attr({
         id: 'bob'
       });
-      this.bob.svg.attr('id', 'bob-diamond-diagram');
+      this.bob.diagram.setAttribute('id', 'bob-diamond-diagram');
       this.bobReceiveChannel = new NetworkChannel(false, clientReceive(this.bob)).appendTo(this.el);
       this.bobReceiveChannel.el.attr({
         id: 'bob-receive-channel'
@@ -123,56 +123,6 @@
 
   _.extend(Visualization.prototype, View);
 
-  LEFT = 'left';
-
-  RIGHT = 'right';
-
-  DiamondPoint = (function() {
-
-    function DiamondPoint(leftEdges, rightEdges) {
-      this.leftEdges = leftEdges;
-      this.rightEdges = rightEdges;
-    }
-
-    DiamondPoint.prototype.equals = function(o) {
-      return this.leftEdges === o.leftEdges && this.rightEdges === o.rightEdges;
-    };
-
-    DiamondPoint.prototype.xPos = function() {
-      return this.rightEdges - this.leftEdges;
-    };
-
-    DiamondPoint.prototype.yPos = function() {
-      return this.rightEdges + this.leftEdges;
-    };
-
-    DiamondPoint.prototype.goLeft = function(data) {
-      return new DiamondEdge(this, LEFT, data);
-    };
-
-    DiamondPoint.prototype.goRight = function(data) {
-      return new DiamondEdge(this, RIGHT, data);
-    };
-
-    return DiamondPoint;
-
-  })();
-
-  DiamondEdge = (function() {
-
-    function DiamondEdge(startPoint, direction, data) {
-      this.startPoint = startPoint;
-      this.direction = direction;
-      this.length = 1;
-      if (typeof data === 'object') {
-        _.extend(this, data);
-      }
-      this.endPoint = this.direction === LEFT ? new DiamondPoint(this.startPoint.leftEdges + this.length, this.startPoint.rightEdges) : new DiamondPoint(this.startPoint.leftEdges, this.startPoint.rightEdges + this.length);
-    }
-
-    return DiamondEdge;
-
-  })();
 
   NetworkChannel = (function() {
 
@@ -318,8 +268,6 @@
       this.channel = channel;
       MyClient.__super__.constructor.call(this, revision);
       this.fromServer = false;
-      this.serverStatePoint = this.clientStatePoint = new DiamondPoint(0, 0);
-      this.edges = [];
       self = this;
       this.el = $('<div class="well client" />').popover({
         selector: '.operation',
@@ -349,40 +297,18 @@
         }
       });
       cmWrapper.detach().appendTo(this.el);
-      this.initD3();
+      // this.initD3();
+      this.diagram = document.createElement("juicy-diamond-graph");
     }
 
     MyClient.prototype.appendTo = function(el) {
       View.appendTo.call(this, el);
-      $(this.svg[0]).appendTo(el);
+      $(this.diagram).appendTo(el);
+      // el[0].appendChild(this.diagram);
       return this;
     };
 
-    MyClient.prototype.initD3 = function() {
-      var H, W, diagram, drag, edgesLayer, px, py, rules, rulesLayer, svg, x, y;
-      W = 460;
-      H = 320;
-      px = W / 2;
-      py = 0;
-      svg = this.svg = d3.select('body').append('svg').attr('class', 'diamond-diagram').attr('width', W).attr('height', H);
-      diagram = svg.append('g').attr('transform', 'translate(0, 20)');
-      x = this.x = d3.scale.linear().domain([0, 20]).range([0, W]);
-      y = this.y = d3.scale.linear().domain([0, 16]).range([0, H]);
-      drag = d3.behavior.drag().on('drag', function() {
-        py = Math.min(0, py + d3.event.dy);
-        px += d3.event.dx;
-        rulesLayer.attr('transform', 'translate(0,' + py + ')');
-        return edgesLayer.attr('transform', 'translate(' + px + ',' + py + ')');
-      });
-      svg.call(drag);
-      rulesLayer = diagram.append('g');
-      rules = rulesLayer.selectAll('.rule').data(d3.range(200)).enter().append('g').attr('class', 'rule').attr('transform', function(i) {
-        return "translate(0, " + (y(i)) + ")";
-      });
-      rules.append('line').attr('stroke', '#ddd').attr('y1', '0.5').attr('y2', '0.5').attr('x1', '30').attr('x2', W);
-      rules.append('text').text(String).attr('x', 15).attr('dy', '0.35em').attr('text-anchor', 'middle');
-      return edgesLayer = this.edgesLayer = diagram.append('g').attr('transform', 'translate(' + px + ',' + py + ')');
-    };
+
 
     MyClient.prototype.sendOperation = function(revision, operation) {
       operation.revision = revision;
@@ -395,91 +321,20 @@
       return this.fromServer = false;
     };
 
-    MyClient.prototype.drawEdges = function() {
-      var _this = this;
-      return this.edgesLayer.selectAll('.diamond-edge').data(this.edges).enter().append('line').attr('class', 'diamond-edge').attr('stroke', function(e) {
-        if (e.direction === LEFT) {
-          return '#1e488d';
-        } else {
-          return '#d11';
-        }
-      }).attr('stroke-width', '4px').attr('stroke-linecap', 'round').attr('stroke-dasharray', function(e) {
-        if (e.dashed) {
-          return '8, 10';
-        } else {
-          return '1, 0';
-        }
-      }).attr('x1', function(e) {
-        return _this.x(e.startPoint.xPos());
-      }).attr('y1', function(e) {
-        return _this.y(e.startPoint.yPos());
-      }).attr('x2', function(e) {
-        return _this.x(e.endPoint.xPos());
-      }).attr('y2', function(e) {
-        return _this.y(e.endPoint.yPos());
-      });
-    };
-
-    MyClient.prototype.addEdge = function(edge) {
-      this.edges.push(edge);
-      return this.drawEdges();
-    };
-
     MyClient.prototype.setAwaitingAndBufferEdge = function(awaitingEdge, bufferEdge) {
-      var drawEdge,
-        _this = this;
-      if (this.awaitingEdge) {
-        this.awaitingEdge.remove();
-        delete this.awaitingEdge;
-      }
-      if (this.bufferEdge) {
-        this.bufferEdge.remove();
-        delete this.bufferEdge;
-      }
-      drawEdge = function(edge, color) {
-        return _this.edgesLayer.append('line').attr('stroke', color).attr('stroke-width', '4px').attr('stroke-linecap', 'round').attr('x1', _this.x(edge.startPoint.xPos())).attr('y1', _this.y(edge.startPoint.yPos())).attr('x2', _this.x(edge.endPoint.xPos())).attr('y2', _this.y(edge.endPoint.yPos()));
-      };
-      if (awaitingEdge) {
-        this.awaitingEdge = drawEdge(awaitingEdge, '#ccc');
-      }
-      if (bufferEdge) {
-        return this.bufferEdge = drawEdge(bufferEdge, '#999');
-      }
+      return this.diagram.setAwaitingAndBufferEdge(awaitingEdge, bufferEdge);
     };
 
     MyClient.prototype.goLeft = function(data) {
-      var clientEdge, edge, serverEdge;
-      data || (data = {});
-      if (this.clientStatePoint.equals(this.serverStatePoint)) {
-        edge = this.clientStatePoint.goLeft(data);
-        this.clientStatePoint = this.serverStatePoint = edge.endPoint;
-        return this.addEdge(edge);
-      } else {
-        serverEdge = this.serverStatePoint.goLeft(data);
-        this.serverStatePoint = serverEdge.endPoint;
-        this.addEdge(serverEdge);
-        clientEdge = this.clientStatePoint.goLeft(_.extend(data, {
-          dashed: true
-        }));
-        this.clientStatePoint = clientEdge.endPoint;
-        return this.addEdge(clientEdge);
-      }
+      return this.diagram.goLeft(data);
     };
 
     MyClient.prototype.goRightClient = function(data) {
-      var edge;
-      edge = this.clientStatePoint.goRight(data || {});
-      this.clientStatePoint = edge.endPoint;
-      return this.addEdge(edge);
+      return this.diagram.goRightClient(data);
     };
 
     MyClient.prototype.goRightServer = function(data) {
-      var edge;
-      edge = this.serverStatePoint.goRight(_.extend(data || {}, {
-        dashed: true
-      }));
-      this.serverStatePoint = edge.endPoint;
-      return this.addEdge(edge);
+      return this.diagram.goRightServer(data);
     };
 
     MyClient.prototype.setState = function(state) {
@@ -558,7 +413,7 @@
   };
 
   Client.AwaitingConfirm.prototype.drawAwaitingAndBufferEdges = function(client) {
-    return client.setAwaitingAndBufferEdge(client.serverStatePoint.goRight({
+    return client.setAwaitingAndBufferEdge(client.diagram.serverStatePoint.goRight({
       length: client.awaitingLength
     }), null);
   };
@@ -581,7 +436,7 @@
 
   Client.AwaitingWithBuffer.prototype.drawAwaitingAndBufferEdges = function(client) {
     var awaitingEdge, bufferEdge;
-    awaitingEdge = client.serverStatePoint.goRight({
+    awaitingEdge = client.diagram.serverStatePoint.goRight({
       length: client.awaitingLength
     });
     bufferEdge = awaitingEdge.endPoint.goRight({

@@ -28,7 +28,7 @@ h1{margin-bottom:16px;}
 .network-channel .operation{display:block;transition:all 0.5s ease-in-out;-moz-transition:all 0.5s ease-in-out;-webkit-transition:all 0.5s ease-in-out;width:24px;height:24px;border-radius:12px;-moz-border-radius:12px;-webkit-border-radius:12px;position:absolute;left:13px;}
 .table-noheader tr:first-child td,.table-noheader tr:first-child th{border-top:none;}
 .popover{width:276px;}.popover table{margin-bottom:0;}
-#alice-diamond-diagram,#bob-diamond-diagram{position:absolute;top:530px;}
+#alice-diamond-diagram,#bob-diamond-diagram{position:absolute;top:530px;width:460px;height:320px;}
 #alice-diamond-diagram{left:0;}
 #bob-diamond-diagram{right:0;}
 footer{border-top:1px solid #eee;margin:24px 0 0;padding:8px 0;color:#555;}

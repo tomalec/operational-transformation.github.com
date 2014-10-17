@@ -6,6 +6,8 @@
     "bootstrap": "3.2.0",
     "ot": "0.0.14",
     "underscore": "1.6.0",
-    "codemirror": "4.4"
+    "codemirror": "4.4",
+    "polymer": "~0.4.2",
+    "juicy-diamond-graph": "Juicy/juicy-diamond-graph#gh-pages"
   }
 }
