@@ -1,5 +1,5 @@
 (function() {
-  var Client, CodeMirrorAdapter, MyClient, MyServer, NetworkChannel, Server, TextOperation, View, Visualization, WrappedOperation, createOperationElement, hideSpan, highlight, operationPopoverContent, operationToHtml, quote, stateTransitions, tr, unescape,
+  var Client, CodeMirrorAdapter, MyClient, MyServer, NetworkChannel, Server, JSONPatchOperation, View, Visualization, WrappedOperation, createOperationElement, hideSpan, highlight, operationPopoverContent, operationToHtml, stateTransitions, tr,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -7,7 +7,7 @@
 
   Server = ot.Server;
 
-  TextOperation = ot.TextOperation;
+  JSONPatchOperation = ot.JSONPatchOperation;
 
   WrappedOperation = ot.WrappedOperation;
 
@@ -21,17 +21,9 @@
   };
 
   operationToHtml = function(operation) {
-    var html, i, op, _i, _len, _ref;
-    html = '';
-    _ref = operation.ops;
-    for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
-      op = _ref[i];
-      if (i !== 0) {
-        html += ", ";
-      }
-      html += TextOperation.isRetain(op) ? '<span class="op-retain">retain(' + op + ')</span>' : TextOperation.isInsert(op) ? '<span class="op-insert">insert("' + op + '")</span>' : '<span class="op-delete">delete(' + (-op) + '</span>';
-    }
-    return html;
+    return "<span>"+
+            JSON.stringify(operation) +
+        "</span>";
   };
 
   operationPopoverContent = function(operation) {
@@ -48,10 +40,10 @@
 
   Visualization = (function() {
 
-    function Visualization(str) {
+    function Visualization(json) {
       var clientReceive, serverReceive,
         _this = this;
-      this.str = str;
+      this.json = json;
       this.el = $('<div id="visualization" />').delegate('.operation', {
         mouseenter: function() {
           var operationId;
@@ -79,12 +71,18 @@
           }
         };
       };
-      this.server = new MyServer(str).appendTo(this.el);
+      this.server = new MyServer(json).appendTo(this.el);
       this.aliceSendChannel = new NetworkChannel(true, serverReceive).appendTo(this.el);
       this.aliceSendChannel.el.attr({
         id: 'alice-send-channel'
       });
-      this.alice = new MyClient("Alice", str, 0, this.aliceSendChannel).appendTo(this.el);
+      this.alice = new MyClient(
+        "Alice (browser)", //name
+        cloneJSON(json), //document
+        0,0, //state
+        "_ClientVersion$","ServerVersion", //revision property names
+        this.aliceSendChannel //networking channel
+      ).appendTo(this.el);
       this.alice.el.attr({
         id: 'alice'
       });
@@ -97,7 +95,13 @@
       this.bobSendChannel.el.attr({
         id: 'bob-send-channel'
       });
-      this.bob = new MyClient("Bob", str, 0, this.bobSendChannel).appendTo(this.el);
+      this.bob = new MyClient(
+        "Bob (SC Server)", 
+        cloneJSON(json), 
+        0,0,
+        "ServerVersion","_ClientVersion$", //revision property names
+        this.bobSendChannel
+      ).appendTo(this.el);
       this.bob.el.attr({
         id: 'bob'
       });
@@ -108,10 +112,7 @@
       });
     }
 
-    Visualization.prototype.insertBefore = function(el) {
-      this.el.insertBefore(el);
-      this.alice.cm.refresh();
-      this.bob.cm.refresh();
+    Visualization.prototype.attached = function() {
       return this;
     };
 
@@ -121,7 +122,6 @@
 
   window.Visualization = Visualization;
 
-  _.extend(Visualization.prototype, View);
 
 
   NetworkChannel = (function() {
@@ -231,15 +231,15 @@
     function MyServer(doc) {
       MyServer.__super__.constructor.call(this, doc);
       this.el = $('<div id="server" class="well" />');
-      $('<h2 />').text("Server").appendTo(this.el);
-      this.stateTable = $('<table class="table table-condensed table-noheader" />').html(tr("Content", quote(unescape(this.document)), 'server-content') + tr("History", "", 'server-history')).appendTo(this.el);
+      $('<h2 />').text("Server (PuppetsOT)").appendTo(this.el);
+      this.stateTable = $('<table class="table table-condensed table-noheader" />').html(tr("Content", JSON.stringify(this.document), 'server-content') + tr("History", "", 'server-history')).appendTo(this.el);
     }
 
     MyServer.prototype.receiveOperation = function(revision, operation) {
       var operationPrime;
       highlight(this.el.find('.server-history .operation').slice(operation.revision));
       operationPrime = MyServer.__super__.receiveOperation.call(this, revision, operation);
-      this.el.find('.server-content td').text(quote(unescape(this.document)));
+      this.el.find('.server-content td').text(JSON.stringify(this.document));
       return operationPrime;
     };
 
@@ -261,12 +261,12 @@
 
     __extends(MyClient, _super);
 
-    function MyClient(name, str, revision, channel) {
-      var cmWrapper, self,
-        _this = this;
+    function MyClient(name, json, revision, remoteRevision, revisionPropName, remoteRevPropName, channel) {
+      var self, _this = this;
       this.name = name;
       this.channel = channel;
       MyClient.__super__.constructor.call(this, revision);
+      this.remoteRevision = remoteRevision;
       this.fromServer = false;
       self = this;
       this.el = $('<div class="well client" />').popover({
@@ -279,26 +279,51 @@
       });
       $('<h2 />').text(this.name).appendTo(this.el);
       this.stateEl = $('<p class="state" />').html("<strong>State:</strong> <span>Synchronized</span>").appendTo(this.el);
-      cmWrapper = $('<div />').appendTo(document.body);
-      this.cm = CodeMirror(cmWrapper.get(0), {
-        lineNumbers: true,
-        lineWrapping: true,
-        value: str
-      });
-      this.cm.on('change', function(cm, change) {
+      this.editor = document.createElement("juicy-jsoneditor");
+      this.editor.json = json;
+      this.el.append( this.editor );
+      // debugger
+      this.editor.addEventListener("change",function(ev){
+        var patch = ev.detail.action;
+        // debugger
         var operation;
         if (!_this.fromServer) {
-          operation = new WrappedOperation(CodeMirrorAdapter.operationFromCodeMirrorChange(change, _this.cm)[0], {
-            creator: _this.name,
-            id: _.uniqueId('operation')
-          });
-          console.log(change, operation);
+          // HERE MAGIC HAPPENDS!
+          // change -> operation
+          // operation = new WrappedOperation(CodeMirrorAdapter.operationFromCodeMirrorChange(change, _this.cm)[0], {
+          this.revision ++;
+          operation = new WrappedOperation(
+            new JSONPatchOperation(
+              [patch], 
+              this.revision, 
+              this.remoteRevision, 
+              revisionPropName, 
+              remoteRevPropName
+            ), {
+              creator: _this.name,
+              id: _.uniqueId('operation')
+            }
+          );
+          console.log(patch, operation);
           return _this.applyClient(operation);
-        }
+        }        
       });
-      cmWrapper.detach().appendTo(this.el);
       // this.initD3();
       this.diagram = document.createElement("juicy-diamond-graph");
+
+      // debugging stuff:
+        // revision notifier
+        
+        var revision_notifier = document.createElement('span');
+        revision_notifier.innerHTML = "Revision:";
+        var revNo = document.createTextNode('revision');
+        revNo.bind('textContent', new PathObserver(this, 'revision'));
+        revision_notifier.appendChild(revNo);
+        revision_notifier.appendChild(document.createTextNode(', Remote revision'));
+        var remRevNo = document.createTextNode('remote');
+        remRevNo.bind('textContent', new PathObserver(this, 'remoteRevision'));
+        revision_notifier.appendChild(remRevNo);
+        this.el[0].appendChild(revision_notifier);
     }
 
     MyClient.prototype.appendTo = function(el) {
@@ -317,6 +342,8 @@
 
     MyClient.prototype.applyOperation = function(operation) {
       this.fromServer = true;
+      debugger
+      return operation.apply(this.editor.json);
       CodeMirrorAdapter.applyOperationToCodeMirror(operation.wrapped, this.cm);
       return this.fromServer = false;
     };
@@ -475,13 +502,6 @@
     return "<tr" + klass + "><th>" + th + "</th><td>" + td + "</td></tr>";
   };
 
-  unescape = function(str) {
-    return str.replace(/\n/g, '\\n').replace(/\t/g, '\\t');
-  };
-
-  quote = function(str) {
-    return '"' + str + '"';
-  };
 
   hideSpan = function(span) {
     return span.animate({
@@ -500,5 +520,8 @@
       });
     });
   };
+  function cloneJSON(json){
+    return JSON.parse(JSON.stringify(json));
+  }
 
 }).call(this);

@@ -28,22 +28,27 @@
     </div>
     <div class="container">
       <h1>Visualization of <abbr title="Operational Transformation">OT</abbr> with a central server</h1>
-      <div class="container" id="wrapper">
+      <div class="container" id="wrapper"></div>
 <footer>
 Visualization <a href="http://creativecommons.org/licenses/by/3.0/"><img src="http://i.creativecommons.org/l/by/3.0/80x15.png" alt="Creative Commons Lizenzvertrag" /></a> <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Tim Baumann</span>. Fork me <a href="https://github.com/Operational-Transformation/ot.js">on GitHub!</a>
 </footer>
-</div>
 <script src="./static/bootstrap/js/tooltip.js"></script>
 <script src="./static/bootstrap/js/popover.js"></script>
 <script src="./static/d3/d3.js"></script>
 <script src="./static/ot/lib/server.js"></script>
+<script src="./bower_components/fast-json-patch/src/json-patch.js"></script>
+<script src="./js/json-patch-operation.js"></script>
 <script src="./js/visualization.js"></script>
 <link rel="import" href="bower_components/juicy-diamond-graph/src/juicy-diamond-graph.html">
+<link rel="import" href="bower_components/juicy-jsoneditor/src/juicy-jsoneditor.html">
+<link rel="stylesheet" type="text/css" href="bower_components/jsoneditor/jsoneditor.min.css">
 <script>
 //window.addEventListener("WebComponentsReady",function () {
 window.addEventListener("polymer-ready",function () {
   // Initialize Visualization
-  new Visualization("Lorem ipsum").insertBefore($('#wrapper footer'));
+  var visualization = window.visualization = new Visualization({some:"json",document: "Lorem ipsum"});
+  document.getElementById("wrapper").appendChild(visualization.el[0]);
+  visualization.attached();
 });
 </script>
     </div>
