@@ -7,7 +7,7 @@ ot.JSONPatchOperation = (function () {
   'use strict';
 
   // Constructor for new operations.
-  function JSONPatchOperation (ops, revision, remoteRevision, revisionPropName, remoteRevPropName) {
+  function JSONPatchOperation (ops, localRevision, remoteRevision, localRevPropName, remoteRevPropName) {
     if (!this || this.constructor !== JSONPatchOperation) {
       // => function was called without 'new'
       return new JSONPatchOperation();
@@ -16,14 +16,14 @@ ot.JSONPatchOperation = (function () {
     this.ops = ops || [];
 
     // maybe not needed
-    this.revision = revision;
+    this.localRevision = localRevision;
     this.remoteRevision = remoteRevision;
-    this.revisionPropName = revisionPropName;
+    this.localRevPropName = localRevPropName;
     this.remoteRevPropName = remoteRevPropName;
 
     this.patch = [
       {op:"test", path: "/" + remoteRevPropName, value: remoteRevision},
-      {op:"replace", path: "/" + revisionPropName, value: revision}
+      {op:"replace", path: "/" + localRevPropName, value: localRevision}
     ].concat(ops);
 
     // An operation's baseLength is the length of every string the operation

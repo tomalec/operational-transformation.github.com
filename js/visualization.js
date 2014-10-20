@@ -261,12 +261,12 @@
 
     __extends(MyClient, _super);
 
-    function MyClient(name, json, revision, remoteRevision, revisionPropName, remoteRevPropName, channel) {
+    function MyClient(name, json, localRevision, revision, localRevPropName, remoteRevPropName, channel) {
       var self, _this = this;
       this.name = name;
       this.channel = channel;
       MyClient.__super__.constructor.call(this, revision);
-      this.remoteRevision = remoteRevision;
+      this.localRevision = localRevision;
       this.fromServer = false;
       self = this;
       this.el = $('<div class="well client" />').popover({
@@ -291,13 +291,13 @@
           // HERE MAGIC HAPPENDS!
           // change -> operation
           // operation = new WrappedOperation(CodeMirrorAdapter.operationFromCodeMirrorChange(change, _this.cm)[0], {
-          this.revision ++;
+          _this.localRevision++;
           operation = new WrappedOperation(
             new JSONPatchOperation(
               [patch], 
-              this.revision, 
-              this.remoteRevision, 
-              revisionPropName, 
+              _this.localRevision,
+              _this.revision,  
+              localRevPropName, 
               remoteRevPropName
             ), {
               creator: _this.name,
@@ -315,13 +315,13 @@
         // revision notifier
         
         var revision_notifier = document.createElement('span');
-        revision_notifier.innerHTML = "Revision:";
+        revision_notifier.innerHTML = "Acknowledged remote revision:";
         var revNo = document.createTextNode('revision');
         revNo.bind('textContent', new PathObserver(this, 'revision'));
         revision_notifier.appendChild(revNo);
-        revision_notifier.appendChild(document.createTextNode(', Remote revision'));
-        var remRevNo = document.createTextNode('remote');
-        remRevNo.bind('textContent', new PathObserver(this, 'remoteRevision'));
+        revision_notifier.appendChild(document.createTextNode(', Local revision: '));
+        var remRevNo = document.createTextNode('client');
+        remRevNo.bind('textContent', new PathObserver(this, 'localRevision'));
         revision_notifier.appendChild(remRevNo);
         this.el[0].appendChild(revision_notifier);
     }
