@@ -64,26 +64,9 @@ h1 {
 .operation.bob { background: @bobColor; }
 
 
-.network-channel {
+potv-network-channel {
   position: absolute; top: 130px;
   width: 50px; height: 150px;
-
-  a {
-    position: absolute; left: 0;
-    text-decoration: none;
-    font-size: 24px; font-weight: bold;
-    color: #1e488d;
-  }
-
-  a.disabled {
-    color: #cadce4;
-    cursor: default;
-  }
-
-  .connection {
-    position: absolute; left: 23px; top: 0; bottom: 0;
-    border-left: 3px dashed #daedef;
-  }
 }
 
 .up-channel a   { top:    10px; }
@@ -115,14 +98,13 @@ h1 {
   background: #ffff00 !important;
 }
 
-.network-channel .operation {
+potv-network-channel .operation {
   display: block;
           transition: all 0.5s ease-in-out;
      -moz-transition: all 0.5s ease-in-out;
   -webkit-transition: all 0.5s ease-in-out;
   width: 24px; height: 24px;
   border-radius: 12px; -moz-border-radius: 12px; -webkit-border-radius: 12px;
-  position: absolute; left: 13px;
 }
 
 

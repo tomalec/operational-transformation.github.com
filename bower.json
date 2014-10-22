@@ -10,6 +10,7 @@
     "polymer": "~0.4.2",
     "juicy-diamond-graph": "Juicy/juicy-diamond-graph#gh-pages",
     "juicy-jsoneditor": "~0.0.2",
-    "fast-json-patch": "~0.4.0"
+    "fast-json-patch": "~0.4.0",
+    "potv-network-channel": "tomalec/potv-network-channel#gh-pages"
   }
 }

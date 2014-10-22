@@ -10,7 +10,7 @@ ot.JSONPatchOperation = (function () {
   function JSONPatchOperation (ops, localRevision, remoteRevision, localRevPropName, remoteRevPropName) {
     if (!this || this.constructor !== JSONPatchOperation) {
       // => function was called without 'new'
-      return new JSONPatchOperation();
+      return new JSONPatchOperation(ops, localRevision, remoteRevision, localRevPropName, remoteRevPropName);
     }
     // Array of JSON operations (plain JSON-Patch object)
     this.ops = ops || [];
