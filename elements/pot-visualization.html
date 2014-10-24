@@ -3,6 +3,7 @@
  -->
 <!-- Import Polymer -->
 <link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="potv-peer.html">
 
 <!-- Define your custom element -->
 <polymer-element name="pot-visualization" attributes="json">
@@ -52,18 +53,14 @@ color:#1e488d">Puppet JS</h2>
       <potv-network-channel id="request" on-transferred="{{requestRecieved}}" direction="right" style="width: 100%; position: static; flex: 1; height: 4em; margin: 1em 0;"></potv-network-channel>
       <potv-network-channel id="response" on-transferred="{{responseRecieved}}" direction="left" style="width: 100%; position: static; flex: 1; height: 4em; margin: 1em 0;"></potv-network-channel>
     </div>
-    <div class="well" style="" json="{{jsonForBob}}">
-      <h2 style="font-size: 28px;
-line-height: 42px;
-margin: -8px 0 4px;
-
-color: rgb(255,203,0)">Puppet SC</h2>
-      <ul>
-        <li>Server version: {{bobLocalVersion}}</li>
-        <li>Acknowledged client version: {{bobRemoteVersion}}</li>
-      </ul>
-      <h4>Queue</h4>
-    </div>
+    <potv-peer 
+      id="bob"
+      json="{{jsonForBob}}"
+      localVersion="0"
+      remoteVersion="0"
+      localVersionName="_ServerVersion"
+      remoteVersionName="_ClientVersion$">
+    </potv-peer>
   </div>
   <div id="changes" style="display: flex; flex-direction: row;">
     <div style="margin: auto;">
@@ -88,8 +85,6 @@ color: rgb(255,203,0)">Puppet SC</h2>
 
             aliceLocalVersion: 0,
             aliceRemoteVersion: 0,
-            bobLocalVersion: 0,
-            bobRemoteVersion: 0,
 
 
             // Fires when an instance of the element is created
@@ -104,7 +99,7 @@ color: rgb(255,203,0)">Puppet SC</h2>
 
             // Fires when the element’s initial set of children and siblings are guaranteed to exist
             domReady: function() {
-              this.shadowRoot.querySelectorAll("")
+              // this.shadowRoot.querySelectorAll("")
             },
 
             // Fires when the "<polymer-element>" has been fully prepared
@@ -134,9 +129,9 @@ color: rgb(255,203,0)">Puppet SC</h2>
               var ops = event.detail.action;
               var operationElement = document.createElement("potv-operation");
               operationElement.classList.add("bob")
-              this.bobLocalVersion++;
+              this.$.bob.localVersion++;
 // debugger
-              operationElement.json = new ot.JSONPatchOperation([ops], this.bobLocalVersion, this.bobRemoteVersion,"_ServerVersion", "_ClientVersion$");
+              operationElement.json = new ot.JSONPatchOperation([ops], this.$.bob.localVersion, this.$.bob.remoteVersion,"_ServerVersion", "_ClientVersion$");
               this.$.response.appendChild( operationElement );
 
               this.$.bobDiagram.goRightClient();
@@ -146,7 +141,7 @@ color: rgb(255,203,0)">Puppet SC</h2>
               debugger;
               var operationElement = event.detail.package;
               jsonpatch.apply(this.jsonForBob, operationElement.json.ops);
-              this.bobRemoteVersion = operationElement.json.localRevision;
+              this.$.bob.remoteVersion = operationElement.json.localRevision;
 
               this.$.bobDiagram.goLeft();
             },
@@ -154,6 +149,7 @@ color: rgb(255,203,0)">Puppet SC</h2>
               debugger;
               var operationElement = event.detail.package;
               jsonpatch.apply(this.jsonForAlice, operationElement.json.ops);
+              this.$.aliceDiagram.goRightServer();
               this.aliceRemoteVersion = operationElement.json.localRevision;
 
               this.$.aliceDiagram.goLeft();
