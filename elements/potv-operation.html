@@ -5,7 +5,7 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 
 <!-- Define your custom element -->
-<polymer-element name="potv-operation" attributes="jsonPatch" on-mouseover="showPopover" on-mouseleave="hidePopover">
+<polymer-element name="potv-operation" attributes="jsonPatch">
 <template>
     <style>
      :host{
@@ -33,7 +33,12 @@
      #versions{
         color: white;
     }
+    :host(:hover) #popover{
+        display: block;
+    }
      #popover{
+        display: none;
+
         text-align: left;
 
 
@@ -109,7 +114,7 @@ border-radius: 5px 5px 0 0;
         height: 8em;
     }
     </style>
-    <div id="popover" hidden?="{{!hint}}">
+    <div id="popover">
         <div class="arrow"></div>
         <h3 class="popover-title">Operation</h3>
         <div class="popover-content">
@@ -129,7 +134,6 @@ border-radius: 5px 5px 0 0;
 
     <script>
         Polymer('potv-operation', {
-            hint: false,
             json: null,
             jsonPatch: null,
             // Fires when an instance of the element is created
@@ -149,12 +153,6 @@ border-radius: 5px 5px 0 0;
 
             // Fires when an attribute was added, removed, or updated
             attributeChanged: function(attr, oldVal, newVal) {},
-            showPopover: function(){
-                this.hint = true;
-            },
-            hidePopover: function(){
-                this.hint = false;
-            },
             stringify: function( what ){
                 return JSON.stringify( what );
 
