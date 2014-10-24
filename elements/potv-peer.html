@@ -3,6 +3,8 @@
  -->
 <!-- Import Polymer -->
 <link rel="import" href="../bower_components/polymer/polymer.html">
+<!-- dependencies-->
+<link rel="import" href="../bower_components/core-collapse/core-collapse.html">
 
 <!-- Define your custom element -->
 <polymer-element name="potv-peer" attributes="name json localVersion remoteVersion localVersionName remoteVersionName">
@@ -27,19 +29,50 @@
     line-height: 42px;
     margin: -8px 0 4px;
  }
+ ::content>*{
+    display: inline-block;
+ }
  ::content>.potv-processed{
     transform: scale(0.8);
+    /*float: left;*/
  }
+ ul{
+    list-style: none;
+    padding-left: 10px;
+ }
+ h4,h5{
+    cursor: pointer;
+    margin-bottom: 2px;
+ }
+ #queue,#history{
+    display: block;
+    margin-bottom: 20px;
+    border: 1px solid #e3e3e3;
+    border-radius: 4px;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+
+ }
+/*core-collapse{
+    overflow: visible;
+} 
+.core-collapse-closed{
+    overflow:   hidden;
+}*/
 </style>
   <h2>{{name}}</h2>
   <ul>
     <li>Local version: {{localVersion}}</li>
     <li>Acknowledged remote version: {{remoteVersion}}</li>
   </ul>
-  <h4>Queue</h4>
-  <div><content select=".potv-queue"></content></div>
-  <h5>History</h5>
-  <div><content select=".potv-processed"></content></div>
+  <h4 on-click="{toggleQueue}}">Queue</h4>
+  <core-collapse id="queue" allowOverflow opened>
+    <content select=".potv-queue"></content>
+  </core-collapse>
+  <h5 on-click="{{toggleHistory}}">History</h5>
+  <core-collapse id="history" allowOverflow opened>
+        <content select=".potv-processed"></content>
+  </core-collapse>
   Processing:
   <content></content>
 
@@ -84,7 +117,7 @@
 //               // debugger
 //             },
             recieve: function(operationElement, diagram){
-debugger
+// debugger
                 var versionDistance = operationElement.json.localRevision - this.remoteVersion;
                 if( versionDistance < 1){
                     throw("This version was already applied");
@@ -111,6 +144,14 @@ debugger
                 //Visualization stuff
                     this.appendChild(operationElement);
 
+            },
+
+            // ui only
+            toggleHistory: function(){
+                this.$.history.toggle();
+            },
+            toggleQueue: function(){
+                this.$.queue.toggle();
             }
         });
     </script>

@@ -34,6 +34,9 @@
   h2.bob{
     color: #ca1171;
   }
+  potv-peer{
+    flex:0 1 25%;
+  }
   </style>
   <div id="networking" style="display: flex; flex-direction: row;">
 
@@ -47,7 +50,7 @@
       remoteVersionName="_ServerVersion">
       <h4>Pending requests</h4>
     </potv-peer>
-    <div id="wires" style="flex: 1; position: relative; display: flex; flex-direction: column; justify-content: center; padding: 1em 0;">
+    <div id="wires" style="flex: 1 0 auto; position: relative; display: flex; flex-direction: column; justify-content: center; padding: 1em 0;">
       <potv-network-channel id="request" on-transferred="{{requestRecieved}}" direction="right" style="width: 100%; position: static; flex: 1; height: 4em; margin: 1em 0;"></potv-network-channel>
       <potv-network-channel id="response" on-transferred="{{responseRecieved}}" direction="left" style="width: 100%; position: static; flex: 1; height: 4em; margin: 1em 0;"></potv-network-channel>
     </div>
@@ -86,7 +89,6 @@
             // Fires when an instance of the element is created
             created: function() {
               this.json = this.getAttribute("json");
-              debugger
               this.jsonForBob = JSON.parse((this.json));
               this.jsonForAlice = JSON.parse((this.json));
               this.json = JSON.parse(this.json);
@@ -120,7 +122,6 @@
             aliceJsonChanged: function(event){
               var ops = event.detail.action;
               var operationElement = document.createElement("potv-operation");
-              operationElement.setAttribute("draggable", true);
 
               this.$.alice.localVersion++;
               operationElement.json = new ot.JSONPatchOperation([ops], this.$.alice.localVersion, this.$.alice.remoteVersion, "_ClientVersion$","_ServerVersion");
@@ -132,7 +133,6 @@
             bobJsonChanged: function(event){
               var ops = event.detail.action;
               var operationElement = document.createElement("potv-operation");
-              operationElement.setAttribute("draggable", true);
               operationElement.classList.add("bob")
               this.$.bob.localVersion++;
 // debugger
