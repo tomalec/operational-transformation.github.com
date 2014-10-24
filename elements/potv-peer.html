@@ -5,7 +5,7 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 
 <!-- Define your custom element -->
-<polymer-element name="potv-peer" attributes="name localVersion remoteVersion localVersionName remoteVersionName">
+<polymer-element name="potv-peer" attributes="name json localVersion remoteVersion localVersionName remoteVersionName">
 <template>
 <style>
  :host{
@@ -21,20 +21,25 @@
  }
  h2{
     font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
-font-weight: 500;
+    font-weight: 500;
+    color: rgb(255,203,0);
+    font-size: 28px;
+    line-height: 42px;
+    margin: -8px 0 4px;
+ }
+ ::content>.potv-processed{
+    transform: scale(0.8);
  }
 </style>
-  <h2 style="font-size: 28px;
-line-height: 42px;
-margin: -8px 0 4px;
-
-color: rgb(255,203,0)">Puppet SC</h2>
+  <h2>{{name}}</h2>
   <ul>
-    <li>Server version: {{localVersion}}</li>
-    <li>Acknowledged client version: {{remoteVersion}}</li>
+    <li>Local version: {{localVersion}}</li>
+    <li>Acknowledged remote version: {{remoteVersion}}</li>
   </ul>
   <h4>Queue</h4>
-  <div><content select=".procesed"></content></div>
+  <div><content select=".potv-queue"></content></div>
+  <h5>History</h5>
+  <div><content select=".potv-processed"></content></div>
   Processing:
   <content></content>
 
@@ -45,8 +50,11 @@ color: rgb(255,203,0)">Puppet SC</h2>
     <script>
         Polymer('potv-peer', {
             name: "",
+            queue: null,
             // Fires when an instance of the element is created
-            created: function() {},
+            created: function() {
+                this.queue = [];
+            },
 
             // Fires when the element’s initial set of children and siblings are guaranteed to exist
             domReady: function() {},
@@ -63,18 +71,47 @@ color: rgb(255,203,0)">Puppet SC</h2>
             // Fires when an attribute was added, removed, or updated
             attributeChanged: function(attr, oldVal, newVal) {},
 
-            jsonChanged: function(event){
-              var ops = event.detail.action;
-              var operationElement = document.createElement("potv-operation");
-              operationElement.classList.add("bob")
-              this.$.bob.localVersion++;
-// debugger
-              operationElement.json = new ot.JSONPatchOperation([ops], this.$.bob.localVersion, this.$.bob.remoteVersion,"_ServerVersion", "_ClientVersion$");
-              this.$.response.appendChild( operationElement );
+//             jsonChanged: function(event){
+//               var ops = event.detail.action;
+//               var operationElement = document.createElement("potv-operation");
+//               operationElement.classList.add("bob")
+//               this.$.bob.localVersion++;
+// // debugger
+//               operationElement.json = new ot.JSONPatchOperation([ops], this.$.bob.localVersion, this.$.bob.remoteVersion,"_ServerVersion", "_ClientVersion$");
+//               this.$.response.appendChild( operationElement );
 
-              this.$.bobDiagram.goRightClient();
-              // debugger
-            },
+//               this.$.bobDiagram.goRightClient();
+//               // debugger
+//             },
+            recieve: function(operationElement, diagram){
+debugger
+                var versionDistance = operationElement.json.localRevision - this.remoteVersion;
+                if( versionDistance < 1){
+                    throw("This version was already applied");
+                }
+                if( versionDistance == 1){ // version is fine, apply patch, update version, and check queue
+                    // computing
+                    this.remoteVersion = operationElement.json.localRevision;
+                    jsonpatch.apply(this.json, operationElement.json.ops);
+                    //Visualization stuff
+                        diagram.goLeft();
+                        operationElement.classList.remove("potv-queue");
+                        operationElement.classList.add("potv-processed")
+
+                    // process next in queue if any
+                    var nextInQueue = this.queue.shift();
+                    nextInQueue && this.recieve(nextInQueue, diagram);
+                } else { // add operation to queue
+                    // computing
+                    this.queue[ versionDistance -2 ]=(operationElement);
+                    //Visualization stuff
+                        console.log(this.queue);
+                        operationElement.classList.add("potv-queue");
+                }
+                //Visualization stuff
+                    this.appendChild(operationElement);
+
+            }
         });
     </script>
 

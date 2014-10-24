@@ -28,33 +28,32 @@
     line-height: 42px;
     margin: -8px 0 4px;
   }
-  h2.alice{ 
-    color: #d45e12;;
+  #alice::shadow h2{ 
+    color: #1e488d;
   }
   h2.bob{
     color: #ca1171;
   }
   </style>
   <div id="networking" style="display: flex; flex-direction: row;">
-    <div class="well" style="" json="{{jsonForAlice}}">
-      <h2 style="font-size: 28px;
-line-height: 42px;
-margin: -8px 0 4px;
 
-color:#1e488d">Puppet JS</h2>
-      <ul>
-        <li>Client version: {{aliceLocalVersion}}</li>
-        <li>Acknowledged server version: {{aliceRemoteVersion}}</li>
-      </ul>
+    <potv-peer 
+      id="alice"
+      name="Puppet JS"
+      json="{{jsonForAlice}}"
+      localVersion="0"
+      remoteVersion="0"
+      localVersionName="_ClientVersion$"
+      remoteVersionName="_ServerVersion">
       <h4>Pending requests</h4>
-      <h4>Queue</h4>
-    </div>
+    </potv-peer>
     <div id="wires" style="flex: 1; position: relative; display: flex; flex-direction: column; justify-content: center; padding: 1em 0;">
       <potv-network-channel id="request" on-transferred="{{requestRecieved}}" direction="right" style="width: 100%; position: static; flex: 1; height: 4em; margin: 1em 0;"></potv-network-channel>
       <potv-network-channel id="response" on-transferred="{{responseRecieved}}" direction="left" style="width: 100%; position: static; flex: 1; height: 4em; margin: 1em 0;"></potv-network-channel>
     </div>
     <potv-peer 
       id="bob"
+      name="Puppet SC"
       json="{{jsonForBob}}"
       localVersion="0"
       remoteVersion="0"
@@ -65,7 +64,7 @@ color:#1e488d">Puppet JS</h2>
   <div id="changes" style="display: flex; flex-direction: row;">
     <div style="margin: auto;">
       <h2 class="alice">Alice, plays with browser</h2>
-      <juicy-jsoneditor json="{{jsonForAlice}}" on-change="{{aliceJsonChanged}}" expandAll></juicy-jsoneditor>
+      <juicy-jsoneditor json="{{jsonForAlice}}" on-change="{{aliceJsonChanged}}"></juicy-jsoneditor>
       <juicy-diamond-graph id="aliceDiagram"></juicy-diamond-graph>
     </div>
     <div style="margin: auto;">
@@ -83,9 +82,6 @@ color:#1e488d">Puppet JS</h2>
             jsonForBob: null,
             jsonForAlice: null,
 
-            aliceLocalVersion: 0,
-            aliceRemoteVersion: 0,
-
 
             // Fires when an instance of the element is created
             created: function() {
@@ -100,6 +96,13 @@ color:#1e488d">Puppet JS</h2>
             // Fires when the element’s initial set of children and siblings are guaranteed to exist
             domReady: function() {
               // this.shadowRoot.querySelectorAll("")
+              function transferOperation(event){
+                if(event.target.tagName == "POTV-OPERATION"){
+                  this.transfer(event.target);
+                }
+              }
+              this.$.request.addEventListener("click",transferOperation);
+              this.$.response.addEventListener("click",transferOperation);
             },
 
             // Fires when the "<polymer-element>" has been fully prepared
@@ -117,9 +120,10 @@ color:#1e488d">Puppet JS</h2>
             aliceJsonChanged: function(event){
               var ops = event.detail.action;
               var operationElement = document.createElement("potv-operation");
+              operationElement.setAttribute("draggable", true);
 
-              this.aliceLocalVersion++;
-              operationElement.json = new ot.JSONPatchOperation([ops], this.aliceLocalVersion, this.aliceRemoteVersion, "_ClientVersion$","_ServerVersion");
+              this.$.alice.localVersion++;
+              operationElement.json = new ot.JSONPatchOperation([ops], this.$.alice.localVersion, this.$.alice.remoteVersion, "_ClientVersion$","_ServerVersion");
               this.$.request.appendChild( operationElement );
 
               this.$.aliceDiagram.goRightClient();
@@ -128,6 +132,7 @@ color:#1e488d">Puppet JS</h2>
             bobJsonChanged: function(event){
               var ops = event.detail.action;
               var operationElement = document.createElement("potv-operation");
+              operationElement.setAttribute("draggable", true);
               operationElement.classList.add("bob")
               this.$.bob.localVersion++;
 // debugger
@@ -138,21 +143,10 @@ color:#1e488d">Puppet JS</h2>
               // debugger
             },
             requestRecieved: function(event){
-              debugger;
-              var operationElement = event.detail.package;
-              jsonpatch.apply(this.jsonForBob, operationElement.json.ops);
-              this.$.bob.remoteVersion = operationElement.json.localRevision;
-
-              this.$.bobDiagram.goLeft();
+              this.$.bob.recieve( event.detail.package, this.$.bobDiagram );
             },
             responseRecieved: function(event){
-              debugger;
-              var operationElement = event.detail.package;
-              jsonpatch.apply(this.jsonForAlice, operationElement.json.ops);
-              this.$.aliceDiagram.goRightServer();
-              this.aliceRemoteVersion = operationElement.json.localRevision;
-
-              this.$.aliceDiagram.goLeft();
+              this.$.alice.recieve( event.detail.package, this.$.aliceDiagram );
             }
         });
     </script>
