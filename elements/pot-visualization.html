@@ -47,7 +47,9 @@
       localVersion="0"
       remoteVersion="0"
       localVersionName="_ClientVersion$"
-      remoteVersionName="_ServerVersion">
+      remoteVersionName="_ServerVersion"      
+      on-versionbumped="{{aliceBumpedVersion}}">
+      <!-- on-testsent="{{aliceSentTest}}" -->
       <h4>Pending requests</h4>
     </potv-peer>
     <div id="wires" style="flex: 1 0 auto; position: relative; display: flex; flex-direction: column; justify-content: center; padding: 1em 0;">
@@ -61,7 +63,9 @@
       localVersion="0"
       remoteVersion="0"
       localVersionName="_ServerVersion"
-      remoteVersionName="_ClientVersion$">
+      remoteVersionName="_ClientVersion$"
+      on-versionbumped="{{bobBumpedVersion}}">      
+      <!-- on-testsent="{{bobSentTest}}" -->
     </potv-peer>
   </div>
   <div id="changes" style="display: flex; flex-direction: row;">
@@ -147,7 +151,49 @@
             },
             responseRecieved: function(event){
               this.$.alice.recieve( event.detail.package, this.$.aliceDiagram );
-            }
+            },
+
+            // bobSentTest: function(event){
+            //   var operation = event.detail.operation;
+            //   var operationElement = document.createElement("potv-operation");
+            //   operationElement.classList.add("bob","test");
+            //   operationElement.json = operation;
+
+            //   this.$.response.appendChild( operationElement );
+
+            //   this.$.bobDiagram.goRightClient();
+            // },
+
+            // aliceSentTest: function(event){
+            //   var operation = event.detail.operation;
+            //   var operationElement = document.createElement("potv-operation");
+            //   operationElement.classList.add("alice","test");
+            //   operationElement.json = operation;
+
+            //   this.$.request.appendChild( operationElement );
+
+            //   this.$.aliceDiagram.goRightClient();
+            // },
+            aliceBumpedVersion: function(){
+              var operation = event.detail.operation;
+              var operationElement = document.createElement("potv-operation");
+              operationElement.classList.add("alice", "versionBump");
+              operationElement.json = operation;
+
+              this.$.request.appendChild( operationElement );
+              this.$.aliceDiagram.goRightClient();
+            },
+            bobBumpedVersion: function(){
+              var operation = event.detail.operation;
+              var operationElement = document.createElement("potv-operation");
+              operationElement.classList.add("bob", "versionBump");
+              operationElement.json = operation;
+
+              this.$.response.appendChild( operationElement );
+              this.$.bobDiagram.goRightClient();
+            }            
+
+
         });
     </script>
 

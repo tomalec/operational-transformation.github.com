@@ -4,6 +4,7 @@
 <!-- Import Polymer -->
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <!-- dependencies-->
+<link rel="import" href="potv-operation.html">
 <link rel="import" href="../bower_components/core-collapse/core-collapse.html">
 
 <!-- Define your custom element -->
@@ -53,18 +54,14 @@
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
 
  }
-/*core-collapse{
-    overflow: visible;
-} 
-.core-collapse-closed{
-    overflow:   hidden;
-}*/
 </style>
   <h2>{{name}}</h2>
   <ul>
     <li>Local version: {{localVersion}}</li>
     <li>Acknowledged remote version: {{remoteVersion}}</li>
   </ul>
+  <!-- <button on-click="{{sendTest}}">Send test</button> -->
+  <button on-click="{{bumpVersion}}">Bump version</button>
   <h4 on-click="{toggleQueue}}">Queue</h4>
   <core-collapse id="queue" allowOverflow opened>
     <content select=".potv-queue"></content>
@@ -84,6 +81,11 @@
         Polymer('potv-peer', {
             name: "",
             queue: null,
+            // supposedly, latest, local version acknowledged by remote
+            ackLocalVersion: 0,
+            // list of local operations, that were potentially not yet acknowledged by remote
+            nonAckList: null,
+            
             // Fires when an instance of the element is created
             created: function() {
                 this.queue = [];
@@ -100,6 +102,22 @@
 
             // Fires when the element was removed from the document
             detached: function() {},
+
+            // sendTest: function (){
+            //     this.dispatchEvent(new CustomEvent("testsent",{
+            //         detail:{
+            //             operation: new ot.JSONPatchOperation([], this.localVersion, this.remoteVersion, this.localVersionName, this.remoteVersionName)
+            //         }
+            //     }) );
+            // },
+            bumpVersion: function (){
+                this.localVersion++;
+                this.dispatchEvent(new CustomEvent("versionbumped",{
+                    detail:{
+                        operation: new ot.JSONPatchOperation([], this.localVersion, this.remoteVersion, this.localVersionName, this.remoteVersionName)
+                    }
+                }) );
+            },
 
             // Fires when an attribute was added, removed, or updated
             attributeChanged: function(attr, oldVal, newVal) {},
@@ -119,10 +137,20 @@
             recieve: function(operationElement, diagram){
 // debugger
                 var versionDistance = operationElement.json.localRevision - this.remoteVersion;
-                if( versionDistance < 1){
+                debugger
+                if( versionDistance <= 0){
                     throw("This version was already applied");
                 }
-                if( versionDistance == 1){ // version is fine, apply patch, update version, and check queue
+                // else if( versionDistance == 0){ // this should be send only for version tests (tomalec: ???: if we even need those)
+                //     if(operationElement.json.ops.length){
+                //         throw("This version was already applied");
+                //     }
+                //     // this is just a test
+                //     // TODO: bump ackLocalVersion
+                //     // Visualization stuff
+                //         operationElement.classList.add("potv-processed")
+                // }
+                else if( versionDistance == 1){ // version is fine, apply patch, update version, and check queue
                     // computing
                     this.remoteVersion = operationElement.json.localRevision;
                     try{
