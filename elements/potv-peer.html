@@ -125,11 +125,20 @@
                 if( versionDistance == 1){ // version is fine, apply patch, update version, and check queue
                     // computing
                     this.remoteVersion = operationElement.json.localRevision;
-                    jsonpatch.apply(this.json, operationElement.json.ops);
+                    try{
+                        jsonpatch.apply(this.json, operationElement.json.ops);
+                    }catch (ex){
+                        alert("jsonpatch.apply error:" + ex);
+                    }
                     //Visualization stuff
-                        diagram.goLeft();
+                        // move ball out of queue
                         operationElement.classList.remove("potv-queue");
                         operationElement.classList.add("potv-processed")
+                        // draw remote edge
+                        var serverEdgeLength = operationElement.json.remoteRevision - diagram.serverStatePoint.rightEdges;
+                        serverEdgeLength > 0 && diagram.goRightServer({length: serverEdgeLength});
+                        // draw local edge
+                        diagram.goLeft();
 
                     // process next in queue if any
                     var nextInQueue = this.queue.shift();
