@@ -8,7 +8,7 @@
 <link rel="import" href="../bower_components/core-collapse/core-collapse.html">
 
 <!-- Define your custom element -->
-<polymer-element name="potv-peer" attributes="name json localVersion remoteVersion localVersionName remoteVersionName">
+<polymer-element name="potv-peer" attributes="name json localVersion remoteVersion ackLocalVersion localVersionName remoteVersionName">
 <template>
 <style>
  :host{
@@ -45,7 +45,7 @@
     cursor: pointer;
     margin-bottom: 2px;
  }
- #queue,#history{
+ #queue, #history, #pending{
     display: block;
     margin-bottom: 20px;
     border: 1px solid #e3e3e3;
@@ -58,19 +58,23 @@
   <h2>{{name}}</h2>
   <ul>
     <li>Local version: {{localVersion}}</li>
+    <li title="Supposedly, latest, local version acknowledged by remote">Local version acknowledged by remote: {{ackLocalVersion}}</li>
     <li>Acknowledged remote version: {{remoteVersion}}</li>
   </ul>
-  <!-- <button on-click="{{sendTest}}">Send test</button> -->
+  <button disabled on-click="{{sendTest}}">Send test</button>
   <button on-click="{{bumpVersion}}">Bump version</button>
-  <h4 on-click="{toggleQueue}}">Queue</h4>
+  <h4 on-click="{toggleQueue}}" title="List of operations that waits to be applied here.">Queue</h4>
   <core-collapse id="queue" allowOverflow opened>
     <content select=".potv-queue"></content>
   </core-collapse>
-  <h5 on-click="{{toggleHistory}}">History</h5>
+  <h5 on-click="{{togglePending}}" title="List of sent operations in unsure state.">Pending</h5>
+  <core-collapse id="pending" allowOverflow opened>
+        <content select=".potv-pending"></content>
+  </core-collapse>
+  <h5 on-click="{{toggleHistory}}" title="List of operations successfully aplied here.">History</h5>
   <core-collapse id="history" allowOverflow opened>
         <content select=".potv-processed"></content>
   </core-collapse>
-  Processing:
   <content></content>
 
 
@@ -82,13 +86,15 @@
             name: "",
             queue: null,
             // supposedly, latest, local version acknowledged by remote
+            // in other words: zero/starting point in transformation calculation
             ackLocalVersion: 0,
             // list of local operations, that were potentially not yet acknowledged by remote
-            nonAckList: null,
+            nonAckList: [],
             
             // Fires when an instance of the element is created
             created: function() {
                 this.queue = [];
+                this.nonAckList = [];
             },
 
             // Fires when the element’s initial set of children and siblings are guaranteed to exist
@@ -137,7 +143,6 @@
             recieve: function(operationElement, diagram){
 // debugger
                 var versionDistance = operationElement.json.localRevision - this.remoteVersion;
-                debugger
                 if( versionDistance <= 0){
                     throw("This version was already applied");
                 }
@@ -158,6 +163,10 @@
                     }catch (ex){
                         alert("jsonpatch.apply error:" + ex);
                     }
+                    this.ackLocalVersion = operationElement.json.remoteRevision;
+                    //clear pending operations
+                    this.removePendingOperationsWithLocalVersionLowerThan(this.ackLocalVersion);
+                    
                     //Visualization stuff
                         // move ball out of queue
                         operationElement.classList.remove("potv-queue");
@@ -181,6 +190,25 @@
                 //Visualization stuff
                     this.appendChild(operationElement);
 
+            },
+
+            removePendingOperationsWithLocalVersionLowerThan: function(ackVersion){
+                var arr = this.nonAckList;
+                var len = arr.length;
+                var opNo = 0;
+                while(opNo < len && arr[opNo].json.localRevision<=ackVersion){
+                    opNo++
+                }
+                if(opNo){
+                    var removedOperations = this.nonAckList.splice(0,opNo);
+                
+                    //Visualization stuff
+                        var removedLen = removedOperations.length;
+                        while(removedLen-- >0){
+                            var opToRemove = removedOperations[removedLen];
+                            opToRemove.parentNode.removeChild(opToRemove);
+                        }
+                }
             },
 
             // ui only
