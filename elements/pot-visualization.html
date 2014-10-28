@@ -34,8 +34,12 @@
   h2.bob{
     color: #ca1171;
   }
+  h2.alice{
+    color: rgb(159, 211, 55);
+  }
   potv-peer{
     flex:0 1 25%;
+    z-index:5;
   }
   </style>
   <div id="networking" style="display: flex; flex-direction: row;">
@@ -154,7 +158,7 @@
               //TODO: instead of a copy, make it a reflection
               var pendingOperationElement = document.createElement("potv-operation");
               pendingOperationElement.json = operationElement.json;
-              pendingOperationElement.classList.add("bob","potv-pending");
+              pendingOperationElement.classList.add("potv-pending", "bob");
               this.$.bob.nonAckList.push(pendingOperationElement);
 
               this.$.bob.appendChild( pendingOperationElement );

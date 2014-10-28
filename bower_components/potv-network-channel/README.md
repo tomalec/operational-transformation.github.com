@@ -46,9 +46,9 @@ Attribute     | Options            | Default      | Description
 
 ## Methods
 
-Method        | Parameters                           | Returns              | Description
----           | ---                                  | ---                  | ---
-`transfer()`  |   *{String}* **index** (_default_ 0) | "Transfered" Element | Transfers child element of given index.
+Method        | Parameters                                             | Returns              | Description
+---           | ---                                                    | ---                  | ---
+`transfer()`  |   *{Number\|Element}* **index_or_child** (_default_ 0) | "Transfered" Element | Transfers child element of given index, or given child element.
 
 ## Events
 

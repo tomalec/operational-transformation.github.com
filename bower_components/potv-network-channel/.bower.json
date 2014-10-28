@@ -21,14 +21,13 @@
     "Tomek Wytrebowicz <tomalecpub@gmail.com>"
   ],
   "homepage": "https://github.com/tomalec/potv-network-channel",
-  "_release": "cefa00a801",
+  "_release": "e8b5198905",
   "_resolution": {
     "type": "branch",
     "branch": "gh-pages",
-    "commit": "cefa00a8010b979f519be4ed090322a7f3361f80"
+    "commit": "e8b5198905fc6b844d97257a68004872ce2997a1"
   },
   "_source": "git://github.com/tomalec/potv-network-channel.git",
   "_target": "gh-pages",
-  "_originalSource": "tomalec/potv-network-channel",
-  "_direct": true
+  "_originalSource": "tomalec/potv-network-channel"
 }

@@ -27,6 +27,5 @@
   },
   "_source": "git://github.com/Starcounter-Jack/JSON-Patch.git",
   "_target": "~0.4.0",
-  "_originalSource": "fast-json-patch",
-  "_direct": true
+  "_originalSource": "fast-json-patch"
 }

@@ -31,6 +31,6 @@
     "commit": "131a8b446b252829ae3071f3be0bc8cab0dcf65f"
   },
   "_source": "git://github.com/Juicy/juicy-jsoneditor.git",
-  "_target": "~0.0.2",
+  "_target": "~0.0.4",
   "_originalSource": "juicy-jsoneditor"
 }

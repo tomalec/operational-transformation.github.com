@@ -24,23 +24,29 @@
 
         text-align: center;
 
-        background-color: #d45e12;
+        background-color: #9FD337;
 
      }
      :host(.bob){
-        background-color: #ca1171;
+        background-color: #DD2A8F;
+     }
+     :host(.transformed){
+        background: linear-gradient(135deg, #9FD337 45%,#DD2A8F 100%);
+     }
+     :host(.transformed.bob){
+        background: linear-gradient(135deg, #DD2A8F 20%,#9FD337 100%); 
      }
     /* :host(.test){
-        background-color: rgba(212, 94, 18, 0.3);
+        background-color: rgba(159, 211, 55, 0.3);
      }
      :host(.test.bob){
-        background-color: rgba(202, 17, 113, 0.3);
+        background-color: rgba(221, 42, 143, 0.3);
      }*/
      :host(.versionBump){
-        background-color: rgba(212, 94, 18, 0.7);
+        background-color: rgba(159, 211, 55, 0.7);
      }
      :host(.versionBump.bob){
-        background-color: rgba(202, 17, 113, 0.7);
+        background-color: rgba(221, 42, 143, 0.7);
      }
      #versions{
         color: white;
@@ -65,7 +71,7 @@
         max-width: 960px;
         padding: 1px;
         background-color: #ffffff;
-        z-index: 1010;
+        z-index: 10;
         width: 540px;
         margin-left: 12px;
 
@@ -127,6 +133,9 @@
         width: calc( 100% - 10px );
         height: 8em;
     }
+    ::content>potv-operation{
+        display: inline-block;
+    }
     </style>
     <div id="popover">
         <div class="arrow"></div>
@@ -140,10 +149,10 @@
                 <tr><th>Changeset</th><td><textarea style="width: 100%;">{{json | stringify}}</textarea></td></tr>
             </tbody>
             </table>
+            <content></content>
         </div>
     </div>
     <span id="versions">{{json.patch[1].value}}:{{json.patch[0].value}}</span>
-    <content></content>
 </template>
 
     <script>
