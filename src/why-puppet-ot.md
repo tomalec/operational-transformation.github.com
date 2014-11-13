@@ -158,6 +158,7 @@ Server response #S1:
   {"op": "replace", "path": "/_ServerVersion", "value": 1},
   {"op": "remove", "path": "/Items/0"}
 ]
+```
 
 In consequence, when #B2 with `_ClientVersion$: 2` arrives, Banana is already at the array index 0 and at the requested path to array index 1 is not valid anymore.
 
@@ -337,10 +338,10 @@ Patch batches are considered non-atomic, meaning that if one patch gets rejected
 
 
 ### Questions:
-1. Should version name be hardcoded or provided as parameter in PuppetJS constructor? In [my visualization](http://tomalec.github.io/Puppet-operational-transformation/visualization.html)
+1. Should version name be hardcoded or provided as parameter in PuppetJS constructor? In [my visualization](http://tomalec.github.io/Puppet-operational-transformation/visualization.html) I made it as parameters, as in general concept both peers are equal (transformations may differ).
 
 2. Consider sending two test ops, for JSON-Patch clarity:
-```json
+  ```json
   {"op": "test", "path": "/_ServerVersion", "value": 0},
   {"op": "test", "path": "/_ClientVersion", "value": 1},
   {"op": "replace", "path": "/_ClientVersion$", "value": 2}
