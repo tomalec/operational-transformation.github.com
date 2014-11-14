@@ -5,7 +5,7 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 
 <!-- Define your custom element -->
-<polymer-element name="potv-operation" attributes="jsonPatch">
+<polymer-element name="potv-operation" attributes="operation">
 <template>
     <style>
      :host{
@@ -31,10 +31,10 @@
         background-color: #DD2A8F;
      }
      :host(.transformed){
-        background: linear-gradient(135deg, #9FD337 45%,#DD2A8F 100%);
+        background: linear-gradient(135deg, #DD2A8F 20%,#9FD337 100%); 
      }
      :host(.transformed.bob){
-        background: linear-gradient(135deg, #DD2A8F 20%,#9FD337 100%); 
+        background: linear-gradient(135deg, #9FD337 45%,#DD2A8F 100%);
      }
     /* :host(.test){
         background-color: rgba(159, 211, 55, 0.3);
@@ -137,28 +137,27 @@
         display: inline-block;
     }
     </style>
-    <div id="popover">
+    <div id="popover" on-click="{{block}}">
         <div class="arrow"></div>
         <h3 class="popover-title">Operation</h3>
         <div class="popover-content">
             <table class="table table-condensed table-noheader">
             <tbody>
                 <tr><th>Author</th><td>{{author}}</td></tr>
-                <tr><th>Local Version</th><td>{{json.patch[1].value}}</td></tr>
-                <tr><th>Remote Version</th><td>{{json.patch[0].value}}</td></tr>
-                <tr><th>Changeset</th><td><textarea style="width: 100%;">{{json | stringify}}</textarea></td></tr>
+                <tr><th>Local Version</th><td>{{operation.patch[1].value}}</td></tr>
+                <tr><th>Remote Version</th><td>{{operation.patch[0].value}}</td></tr>
+                <tr><th>Changeset</th><td><textarea style="width: 100%;">{{operation | stringify}}</textarea></td></tr>
             </tbody>
             </table>
             <content></content>
         </div>
     </div>
-    <span id="versions">{{json.patch[1].value}}:{{json.patch[0].value}}</span>
+    <span id="versions">{{operation.patch[1].value}}:{{operation.patch[0].value}}</span>
 </template>
 
     <script>
         Polymer('potv-operation', {
-            json: null,
-            jsonPatch: null,
+            operation: null,
             // Fires when an instance of the element is created
             created: function() {},
 
@@ -179,6 +178,9 @@
             stringify: function( what ){
                 return JSON.stringify( what );
 
+            },
+            block: function(event){
+                event.stopPropagation();
             }
         });
     </script>

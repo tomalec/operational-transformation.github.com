@@ -82,6 +82,9 @@
 </template>
 
     <script>
+        /**
+         * @TODO: isolate pot-peer for protocol stuff only
+         */
         Polymer('potv-peer', {
             name: "",
             queue: null,
@@ -134,7 +137,7 @@
 //               operationElement.classList.add("bob")
 //               this.$.bob.localVersion++;
 // // debugger
-//               operationElement.json = new ot.JSONPatchOperation([ops], this.$.bob.localVersion, this.$.bob.remoteVersion,"_ServerVersion", "_ClientVersion$");
+//               operationElement.operation = new ot.JSONPatchOperation([ops], this.$.bob.localVersion, this.$.bob.remoteVersion,"_ServerVersion", "_ClientVersion$");
 //               this.$.response.appendChild( operationElement );
 
 //               this.$.bobDiagram.goRightClient();
@@ -142,9 +145,10 @@
 //             },
             recieve: function(operationElement, diagram){
 // debugger
-                var operation = operationElement.json;
+                var operation = operationElement.operation;
                 var transformedOperation = null;
 
+                // new remote version - last acknowledged remote version
                 var versionDistance = operation.localRevision - this.remoteVersion;
                 if( versionDistance <= 0){
                     throw("This version was already applied");
@@ -168,7 +172,9 @@
                     if(this.nonAckList.length){// is there any pending local operation?
                         // => Remote sent us something based on outdated versionDistance
                         console.info("Transformation needed", operation, 'by', this.nonAckList);
-                        var transformedOperation = operation//.transform(this.nonAckList);
+                        var transformedOperation = operation.transform(
+                                this.nonAckList.map(function(el){return el.operation;})// fetch JSONPatchOperations out of <potv-operation>s
+                            );
 
                     }
                     this.remoteVersion = operation.localRevision;
@@ -202,10 +208,20 @@
                     if( transformedOperation ){
                         var transformedOperationElement = document.createElement("potv-operation");
                         transformedOperationElement.classList.add(this.id, "transformed", "potv-processed");
-                        transformedOperationElement.json = transformedOperation;
+                        transformedOperationElement.operation = transformedOperation;
 
                         transformedOperationElement.appendChild(operationElement);
                         // transformedOperationElement.appendChild( pendingOperations );
+                        // clone also pending operations that were used for transformation
+                        for(var nonAckNumber = 0, nonAckLength = this.nonAckList.length; nonAckNumber < nonAckLength; nonAckNumber++){
+                            var pendingOperation = this.nonAckList[nonAckNumber];
+                            var clonedPendingOperation = pendingOperation.cloneNode(true);
+                            // clonedPendingOperation.operation = JSONPatchOperation.fromJSON( JSON.parse(JSON.stringify(pendingOperation.operation)) );
+                            clonedPendingOperation.operation = ot.JSONPatchOperation.fromJSON( pendingOperation.operation.patch );
+                            transformedOperationElement.appendChild(clonedPendingOperation);
+                        }
+
+
                         this.appendChild(transformedOperationElement);
                     }else{
                         this.appendChild(operationElement);
@@ -217,7 +233,7 @@
                 var arr = this.nonAckList;
                 var len = arr.length;
                 var opNo = 0;
-                while(opNo < len && arr[opNo].json.localRevision<=ackVersion){
+                while(opNo < len && arr[opNo].operation.localRevision<=ackVersion){
                     opNo++
                 }
                 if(opNo){

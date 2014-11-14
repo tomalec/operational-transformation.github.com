@@ -177,7 +177,8 @@ ot.JSONPatchOperation = (function () {
   };
 
   // Converts a plain JS object into an operation and validates it.
-  // JSONPatchOperation.fromJSON = function (ops) {
+  JSONPatchOperation.fromJSON = function (json) {
+      return new JSONPatchOperation(json.splice(2), json[1].value, json[0].value, json[1].path.substr(1), json[0].path.substr(1))
   //   debugger;
   //   var o = new JSONPatchOperation();
   //   for (var i = 0, l = ops.length; i < l; i++) {
@@ -193,7 +194,7 @@ ot.JSONPatchOperation = (function () {
   //     }
   //   }
   //   return o;
-  // };
+  };
 
   // Apply an operation to a string, returning a new string. Throws an error if
   // there's a mismatch between the input string and the operation.
@@ -229,206 +230,238 @@ ot.JSONPatchOperation = (function () {
     }
     return newStr.join('');
   };
-
-  // Computes the inverse of an operation. The inverse of an operation is the
-  // operation that reverts the effects of the operation, e.g. when you have an
-  // operation 'insert("hello "); skip(6);' then the inverse is 'delete("hello ");
-  // skip(6);'. The inverse should be used for implementing undo.
-  JSONPatchOperation.prototype.invert = function (str) {
+  JSONPatchOperation.prototype.transform = function (operations) {
     debugger;
-    var strIndex = 0;
-    var inverse = new JSONPatchOperation();
-    var ops = this.ops;
-    for (var i = 0, l = ops.length; i < l; i++) {
-      var op = ops[i];
-      if (isRetain(op)) {
-        inverse.retain(op);
-        strIndex += op;
-      } else if (isInsert(op)) {
-        inverse['delete'](op.length);
-      } else { // delete op
-        inverse.insert(str.slice(strIndex, strIndex - op));
-        strIndex -= op;
-      }
-    }
-    return inverse;
-  };
-
-  // Compose merges two consecutive operations into one operation, that
-  // preserves the changes of both. Or, in other words, for each input string S
-  // and a pair of consecutive operations A and B,
-  // apply(apply(S, A), B) = apply(S, compose(A, B)) must hold.
-  JSONPatchOperation.prototype.compose = function (operation2) {
-    debugger;
-    var operation1 = this;
-    if (operation1.targetLength !== operation2.baseLength) {
-      throw new Error("The base length of the second operation has to be the target length of the first operation");
-    }
-
-    var operation = new JSONPatchOperation(); // the combined operation
-    var ops1 = operation1.ops, ops2 = operation2.ops; // for fast access
-    var i1 = 0, i2 = 0; // current index into ops1 respectively ops2
-    var op1 = ops1[i1++], op2 = ops2[i2++]; // current ops
-    while (true) {
-      // Dispatch on the type of op1 and op2
-      if (typeof op1 === 'undefined' && typeof op2 === 'undefined') {
-        // end condition: both ops1 and ops2 have been processed
-        break;
-      }
-
-      if (isDelete(op1)) {
-        operation['delete'](op1);
-        op1 = ops1[i1++];
-        continue;
-      }
-      if (isInsert(op2)) {
-        operation.insert(op2);
-        op2 = ops2[i2++];
-        continue;
-      }
-
-      if (typeof op1 === 'undefined') {
-        throw new Error("Cannot compose operations: first operation is too short.");
-      }
-      if (typeof op2 === 'undefined') {
-        throw new Error("Cannot compose operations: first operation is too long.");
-      }
-
-      if (isRetain(op1) && isRetain(op2)) {
-        if (op1 > op2) {
-          operation.retain(op2);
-          op1 = op1 - op2;
-          op2 = ops2[i2++];
-        } else if (op1 === op2) {
-          operation.retain(op1);
-          op1 = ops1[i1++];
-          op2 = ops2[i2++];
-        } else {
-          operation.retain(op1);
-          op2 = op2 - op1;
-          op1 = ops1[i1++];
-        }
-      } else if (isInsert(op1) && isDelete(op2)) {
-        if (op1.length > -op2) {
-          op1 = op1.slice(-op2);
-          op2 = ops2[i2++];
-        } else if (op1.length === -op2) {
-          op1 = ops1[i1++];
-          op2 = ops2[i2++];
-        } else {
-          op2 = op2 + op1.length;
-          op1 = ops1[i1++];
-        }
-      } else if (isInsert(op1) && isRetain(op2)) {
-        if (op1.length > op2) {
-          operation.insert(op1.slice(0, op2));
-          op1 = op1.slice(op2);
-          op2 = ops2[i2++];
-        } else if (op1.length === op2) {
-          operation.insert(op1);
-          op1 = ops1[i1++];
-          op2 = ops2[i2++];
-        } else {
-          operation.insert(op1);
-          op2 = op2 - op1.length;
-          op1 = ops1[i1++];
-        }
-      } else if (isRetain(op1) && isDelete(op2)) {
-        if (op1 > -op2) {
-          operation['delete'](op2);
-          op1 = op1 + op2;
-          op2 = ops2[i2++];
-        } else if (op1 === -op2) {
-          operation['delete'](op2);
-          op1 = ops1[i1++];
-          op2 = ops2[i2++];
-        } else {
-          operation['delete'](op1);
-          op2 = op2 + op1;
-          op1 = ops1[i1++];
-        }
-      } else {
-        throw new Error(
-          "This shouldn't happen: op1: " +
-          JSON.stringify(op1) + ", op2: " +
-          JSON.stringify(op2)
-        );
-      }
-    }
-    return operation;
-  };
-
-  function getSimpleOp (operation, fn) {
-    debugger;
-    var ops = operation.ops;
-    var isRetain = JSONPatchOperation.isRetain;
-    switch (ops.length) {
-    case 1:
-      return ops[0];
-    case 2:
-      return isRetain(ops[0]) ? ops[1] : (isRetain(ops[1]) ? ops[0] : null);
-    case 3:
-      if (isRetain(ops[0]) && isRetain(ops[2])) { return ops[1]; }
-    }
-    return null;
+    return this;
+    var clonedPatch = JSON.parse(JSON.stringify(this.patch)); // clone needed for debugging and visualization
+    return operations.reduce(composeJSONPatches, clonedPatch); // <=> composeJSONPatches(this, operations.concat() )
   }
+  var composeJSONPatches = function( obj, patch ){
+        var result = false, p = 0, objLen = obj.length, pLen = patch.length, patchOp;
+        while (p < pLen) {
+            patchOp = patch[p];
+            p++;
 
-  function getStartIndex (operation) {
-    debugger;
-    if (isRetain(operation.ops[0])) { return operation.ops[0]; }
-    return 0;
-  }
+            var objOpNo = 0;
 
-  // When you use ctrl-z to undo your latest changes, you expect the program not
-  // to undo every single keystroke but to undo your last sentence you wrote at
-  // a stretch or the deletion you did by holding the backspace key down. This
-  // This can be implemented by composing operations on the undo stack. This
-  // method can help decide whether two operations should be composed. It
-  // returns true if the operations are consecutive insert operations or both
-  // operations delete text at the same position. You may want to include other
-  // factors like the time since the last change in your decision.
-  JSONPatchOperation.prototype.shouldBeComposedWith = function (other) {
-    debugger;
-    if (this.isNoop() || other.isNoop()) { return true; }
+            // basic validation (as in fast-json-patch)
+            if (patchOp.value === undefined && (patchOp.op === "add" || patchOp.op === "replace" || patchOp.op === "test")) {
+                throw new Error("'value' MUST be defined");
+            }
+            if (patchOp.from === undefined && (patchOp.op === "copy" || patchOp.op === "move")) {
+                throw new Error("'from' MUST be defined");
+            }
 
-    var startA = getStartIndex(this), startB = getStartIndex(other);
-    var simpleA = getSimpleOp(this), simpleB = getSimpleOp(other);
-    if (!simpleA || !simpleB) { return false; }
-
-    if (isInsert(simpleA) && isInsert(simpleB)) {
-      return startA + simpleA.length === startB;
+            // apply patch operation to all obj ops
+            transformOps[patchOp.op](patchOp, obj);
+        }
+        return result;
     }
+  // JSONPatch does not implement undo => not needed
+  // // Computes the inverse of an operation. The inverse of an operation is the
+  // // operation that reverts the effects of the operation, e.g. when you have an
+  // // operation 'insert("hello "); skip(6);' then the inverse is 'delete("hello ");
+  // // skip(6);'. The inverse should be used for implementing undo.
+  // JSONPatchOperation.prototype.invert = function (str) {
+  //   debugger;
+  //   var strIndex = 0;
+  //   var inverse = new JSONPatchOperation();
+  //   var ops = this.ops;
+  //   for (var i = 0, l = ops.length; i < l; i++) {
+  //     var op = ops[i];
+  //     if (isRetain(op)) {
+  //       inverse.retain(op);
+  //       strIndex += op;
+  //     } else if (isInsert(op)) {
+  //       inverse['delete'](op.length);
+  //     } else { // delete op
+  //       inverse.insert(str.slice(strIndex, strIndex - op));
+  //       strIndex -= op;
+  //     }
+  //   }
+  //   return inverse;
+  // };
 
-    if (isDelete(simpleA) && isDelete(simpleB)) {
-      // there are two possibilities to delete: with backspace and with the
-      // delete key.
-      return (startB - simpleB === startA) || startA === startB;
-    }
+  // tomalec: not needed?? 
+  // // Compose merges two consecutive operations into one operation, that
+  // // preserves the changes of both. Or, in other words, for each input string S
+  // // and a pair of consecutive operations A and B,
+  // // apply(apply(S, A), B) = apply(S, compose(A, B)) must hold.
+  // JSONPatchOperation.prototype.compose = function (operation2) {
+  //   debugger;
+  //   var operation1 = this;
+  //   if (operation1.targetLength !== operation2.baseLength) {
+  //     throw new Error("The base length of the second operation has to be the target length of the first operation");
+  //   }
 
-    return false;
-  };
+  //   var operation = new JSONPatchOperation(); // the combined operation
+  //   var ops1 = operation1.ops, ops2 = operation2.ops; // for fast access
+  //   var i1 = 0, i2 = 0; // current index into ops1 respectively ops2
+  //   var op1 = ops1[i1++], op2 = ops2[i2++]; // current ops
+  //   while (true) {
+  //     // Dispatch on the type of op1 and op2
+  //     if (typeof op1 === 'undefined' && typeof op2 === 'undefined') {
+  //       // end condition: both ops1 and ops2 have been processed
+  //       break;
+  //     }
 
-  // Decides whether two operations should be composed with each other
-  // if they were inverted, that is
-  // `shouldBeComposedWith(a, b) = shouldBeComposedWithInverted(b^{-1}, a^{-1})`.
-  JSONPatchOperation.prototype.shouldBeComposedWithInverted = function (other) {
-    debugger;
-    if (this.isNoop() || other.isNoop()) { return true; }
+  //     if (isDelete(op1)) {
+  //       operation['delete'](op1);
+  //       op1 = ops1[i1++];
+  //       continue;
+  //     }
+  //     if (isInsert(op2)) {
+  //       operation.insert(op2);
+  //       op2 = ops2[i2++];
+  //       continue;
+  //     }
 
-    var startA = getStartIndex(this), startB = getStartIndex(other);
-    var simpleA = getSimpleOp(this), simpleB = getSimpleOp(other);
-    if (!simpleA || !simpleB) { return false; }
+  //     if (typeof op1 === 'undefined') {
+  //       throw new Error("Cannot compose operations: first operation is too short.");
+  //     }
+  //     if (typeof op2 === 'undefined') {
+  //       throw new Error("Cannot compose operations: first operation is too long.");
+  //     }
 
-    if (isInsert(simpleA) && isInsert(simpleB)) {
-      return startA + simpleA.length === startB || startA === startB;
-    }
+  //     if (isRetain(op1) && isRetain(op2)) {
+  //       if (op1 > op2) {
+  //         operation.retain(op2);
+  //         op1 = op1 - op2;
+  //         op2 = ops2[i2++];
+  //       } else if (op1 === op2) {
+  //         operation.retain(op1);
+  //         op1 = ops1[i1++];
+  //         op2 = ops2[i2++];
+  //       } else {
+  //         operation.retain(op1);
+  //         op2 = op2 - op1;
+  //         op1 = ops1[i1++];
+  //       }
+  //     } else if (isInsert(op1) && isDelete(op2)) {
+  //       if (op1.length > -op2) {
+  //         op1 = op1.slice(-op2);
+  //         op2 = ops2[i2++];
+  //       } else if (op1.length === -op2) {
+  //         op1 = ops1[i1++];
+  //         op2 = ops2[i2++];
+  //       } else {
+  //         op2 = op2 + op1.length;
+  //         op1 = ops1[i1++];
+  //       }
+  //     } else if (isInsert(op1) && isRetain(op2)) {
+  //       if (op1.length > op2) {
+  //         operation.insert(op1.slice(0, op2));
+  //         op1 = op1.slice(op2);
+  //         op2 = ops2[i2++];
+  //       } else if (op1.length === op2) {
+  //         operation.insert(op1);
+  //         op1 = ops1[i1++];
+  //         op2 = ops2[i2++];
+  //       } else {
+  //         operation.insert(op1);
+  //         op2 = op2 - op1.length;
+  //         op1 = ops1[i1++];
+  //       }
+  //     } else if (isRetain(op1) && isDelete(op2)) {
+  //       if (op1 > -op2) {
+  //         operation['delete'](op2);
+  //         op1 = op1 + op2;
+  //         op2 = ops2[i2++];
+  //       } else if (op1 === -op2) {
+  //         operation['delete'](op2);
+  //         op1 = ops1[i1++];
+  //         op2 = ops2[i2++];
+  //       } else {
+  //         operation['delete'](op1);
+  //         op2 = op2 + op1;
+  //         op1 = ops1[i1++];
+  //       }
+  //     } else {
+  //       throw new Error(
+  //         "This shouldn't happen: op1: " +
+  //         JSON.stringify(op1) + ", op2: " +
+  //         JSON.stringify(op2)
+  //       );
+  //     }
+  //   }
+  //   return operation;
+  // };
 
-    if (isDelete(simpleA) && isDelete(simpleB)) {
-      return startB - simpleB === startA;
-    }
+  // tomalec: not needed?? 
+  // function getSimpleOp (operation, fn) {
+  //   debugger;
+  //   var ops = operation.ops;
+  //   var isRetain = JSONPatchOperation.isRetain;
+  //   switch (ops.length) {
+  //   case 1:
+  //     return ops[0];
+  //   case 2:
+  //     return isRetain(ops[0]) ? ops[1] : (isRetain(ops[1]) ? ops[0] : null);
+  //   case 3:
+  //     if (isRetain(ops[0]) && isRetain(ops[2])) { return ops[1]; }
+  //   }
+  //   return null;
+  // }
 
-    return false;
-  };
+  // tomalec: not needed?? 
+  // function getStartIndex (operation) {
+  //   debugger;
+  //   if (isRetain(operation.ops[0])) { return operation.ops[0]; }
+  //   return 0;
+  // }
+
+  // tomalec: not needed?? 
+  // // When you use ctrl-z to undo your latest changes, you expect the program not
+  // // to undo every single keystroke but to undo your last sentence you wrote at
+  // // a stretch or the deletion you did by holding the backspace key down. This
+  // // This can be implemented by composing operations on the undo stack. This
+  // // method can help decide whether two operations should be composed. It
+  // // returns true if the operations are consecutive insert operations or both
+  // // operations delete text at the same position. You may want to include other
+  // // factors like the time since the last change in your decision.
+  // JSONPatchOperation.prototype.shouldBeComposedWith = function (other) {
+  //   debugger;
+  //   if (this.isNoop() || other.isNoop()) { return true; }
+
+  //   var startA = getStartIndex(this), startB = getStartIndex(other);
+  //   var simpleA = getSimpleOp(this), simpleB = getSimpleOp(other);
+  //   if (!simpleA || !simpleB) { return false; }
+
+  //   if (isInsert(simpleA) && isInsert(simpleB)) {
+  //     return startA + simpleA.length === startB;
+  //   }
+
+  //   if (isDelete(simpleA) && isDelete(simpleB)) {
+  //     // there are two possibilities to delete: with backspace and with the
+  //     // delete key.
+  //     return (startB - simpleB === startA) || startA === startB;
+  //   }
+
+  //   return false;
+  // };
+
+  // tomalec: not needed?? 
+  // // Decides whether two operations should be composed with each other
+  // // if they were inverted, that is
+  // // `shouldBeComposedWith(a, b) = shouldBeComposedWithInverted(b^{-1}, a^{-1})`.
+  // JSONPatchOperation.prototype.shouldBeComposedWithInverted = function (other) {
+  //   debugger;
+  //   if (this.isNoop() || other.isNoop()) { return true; }
+
+  //   var startA = getStartIndex(this), startB = getStartIndex(other);
+  //   var simpleA = getSimpleOp(this), simpleB = getSimpleOp(other);
+  //   if (!simpleA || !simpleB) { return false; }
+
+  //   if (isInsert(simpleA) && isInsert(simpleB)) {
+  //     return startA + simpleA.length === startB || startA === startB;
+  //   }
+
+  //   if (isDelete(simpleA) && isDelete(simpleB)) {
+  //     return startB - simpleB === startA;
+  //   }
+
+  //   return false;
+  // };
 
   // Transform takes two operations A and B that happened concurrently and
   // produces two operations A' and B' (in an array) such that

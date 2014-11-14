@@ -132,11 +132,11 @@
               var operationElement = document.createElement("potv-operation");
 
               this.$.alice.localVersion++;
-              operationElement.json = new ot.JSONPatchOperation([ops], this.$.alice.localVersion, this.$.alice.remoteVersion, "_ClientVersion$","_ServerVersion");
+              operationElement.operation = new ot.JSONPatchOperation([ops], this.$.alice.localVersion, this.$.alice.remoteVersion, "_ClientVersion$","_ServerVersion");
 
               //TODO: instead of a copy, make it a reflection
               var pendingOperationElement = document.createElement("potv-operation");
-              pendingOperationElement.json = operationElement.json;
+              pendingOperationElement.operation = operationElement.operation;
               pendingOperationElement.classList.add("potv-pending");
               this.$.alice.nonAckList.push(pendingOperationElement);
 
@@ -153,11 +153,11 @@
               operationElement.classList.add("bob")
               this.$.bob.localVersion++;
 // debugger
-              operationElement.json = new ot.JSONPatchOperation([ops], this.$.bob.localVersion, this.$.bob.remoteVersion,"_ServerVersion", "_ClientVersion$");
+              operationElement.operation = new ot.JSONPatchOperation([ops], this.$.bob.localVersion, this.$.bob.remoteVersion,"_ServerVersion", "_ClientVersion$");
 
               //TODO: instead of a copy, make it a reflection
               var pendingOperationElement = document.createElement("potv-operation");
-              pendingOperationElement.json = operationElement.json;
+              pendingOperationElement.operation = operationElement.operation;
               pendingOperationElement.classList.add("potv-pending", "bob");
               this.$.bob.nonAckList.push(pendingOperationElement);
 
@@ -179,7 +179,7 @@
             //   var operation = event.detail.operation;
             //   var operationElement = document.createElement("potv-operation");
             //   operationElement.classList.add("bob","test");
-            //   operationElement.json = operation;
+            //   operationElement.operation = operation;
 
             //   this.$.response.appendChild( operationElement );
 
@@ -190,7 +190,7 @@
             //   var operation = event.detail.operation;
             //   var operationElement = document.createElement("potv-operation");
             //   operationElement.classList.add("alice","test");
-            //   operationElement.json = operation;
+            //   operationElement.operation = operation;
 
             //   this.$.request.appendChild( operationElement );
 
@@ -200,7 +200,7 @@
               var operation = event.detail.operation;
               var operationElement = document.createElement("potv-operation");
               operationElement.classList.add("alice", "versionBump");
-              operationElement.json = operation;
+              operationElement.operation = operation;
 
               this.$.request.appendChild( operationElement );
               this.$.aliceDiagram.goRightClient();
@@ -209,7 +209,7 @@
               var operation = event.detail.operation;
               var operationElement = document.createElement("potv-operation");
               operationElement.classList.add("bob", "versionBump");
-              operationElement.json = operation;
+              operationElement.operation = operation;
 
               this.$.response.appendChild( operationElement );
               this.$.bobDiagram.goRightClient();
