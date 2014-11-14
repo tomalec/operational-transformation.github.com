@@ -135,6 +135,7 @@
 //               var ops = event.detail.action;
 //               var operationElement = document.createElement("potv-operation");
 //               operationElement.classList.add("bob")
+//               operationElement.setAttribute("author","bob");
 //               this.$.bob.localVersion++;
 // // debugger
 //               operationElement.operation = new ot.JSONPatchOperation([ops], this.$.bob.localVersion, this.$.bob.remoteVersion,"_ServerVersion", "_ClientVersion$");
@@ -207,7 +208,8 @@
                 //Visualization stuff
                     if( transformedOperation ){
                         var transformedOperationElement = document.createElement("potv-operation");
-                        transformedOperationElement.classList.add(this.id, "transformed", "potv-processed");
+                        transformedOperationElement.classList.add("transformed", "potv-processed");
+                        transformedOperationElement.setAttribute("author",this.id);
                         transformedOperationElement.operation = transformedOperation;
 
                         transformedOperationElement.appendChild(operationElement);

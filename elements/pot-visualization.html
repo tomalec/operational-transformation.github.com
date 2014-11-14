@@ -130,6 +130,7 @@
             aliceJsonChanged: function(event){
               var ops = event.detail.action;
               var operationElement = document.createElement("potv-operation");
+              operationElement.setAttribute("author","alice");
 
               this.$.alice.localVersion++;
               operationElement.operation = new ot.JSONPatchOperation([ops], this.$.alice.localVersion, this.$.alice.remoteVersion, "_ClientVersion$","_ServerVersion");
@@ -138,6 +139,7 @@
               var pendingOperationElement = document.createElement("potv-operation");
               pendingOperationElement.operation = operationElement.operation;
               pendingOperationElement.classList.add("potv-pending");
+              pendingOperationElement.setAttribute("author","alice");
               this.$.alice.nonAckList.push(pendingOperationElement);
 
               this.$.alice.appendChild( pendingOperationElement );
@@ -150,7 +152,7 @@
             bobJsonChanged: function(event){
               var ops = event.detail.action;
               var operationElement = document.createElement("potv-operation");
-              operationElement.classList.add("bob")
+              operationElement.setAttribute("author","bob");
               this.$.bob.localVersion++;
 // debugger
               operationElement.operation = new ot.JSONPatchOperation([ops], this.$.bob.localVersion, this.$.bob.remoteVersion,"_ServerVersion", "_ClientVersion$");
@@ -158,7 +160,9 @@
               //TODO: instead of a copy, make it a reflection
               var pendingOperationElement = document.createElement("potv-operation");
               pendingOperationElement.operation = operationElement.operation;
-              pendingOperationElement.classList.add("potv-pending", "bob");
+              pendingOperationElement.classList.add("potv-pending");
+              pendingOperationElement.setAttribute("author","bob");
+
               this.$.bob.nonAckList.push(pendingOperationElement);
 
               this.$.bob.appendChild( pendingOperationElement );
@@ -178,7 +182,8 @@
             // bobSentTest: function(event){
             //   var operation = event.detail.operation;
             //   var operationElement = document.createElement("potv-operation");
-            //   operationElement.classList.add("bob","test");
+            //   operationElement.classList.add(test");
+            //   operationElement.setAttribute("author","bob");
             //   operationElement.operation = operation;
 
             //   this.$.response.appendChild( operationElement );
@@ -189,7 +194,8 @@
             // aliceSentTest: function(event){
             //   var operation = event.detail.operation;
             //   var operationElement = document.createElement("potv-operation");
-            //   operationElement.classList.add("alice","test");
+            //   operationElement.classList.add("test");
+            //   operationElement.setAttribute("author","alice");
             //   operationElement.operation = operation;
 
             //   this.$.request.appendChild( operationElement );
@@ -199,7 +205,8 @@
             aliceBumpedVersion: function(){
               var operation = event.detail.operation;
               var operationElement = document.createElement("potv-operation");
-              operationElement.classList.add("alice", "versionBump");
+              operationElement.classList.add("versionBump");
+              operationElement.setAttribute("author","alice");
               operationElement.operation = operation;
 
               this.$.request.appendChild( operationElement );
@@ -208,7 +215,8 @@
             bobBumpedVersion: function(){
               var operation = event.detail.operation;
               var operationElement = document.createElement("potv-operation");
-              operationElement.classList.add("bob", "versionBump");
+              operationElement.classList.add("versionBump");
+              operationElement.setAttribute("author","bob");
               operationElement.operation = operation;
 
               this.$.response.appendChild( operationElement );
